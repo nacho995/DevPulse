@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:17
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=DevPulse
+    ports:
+      - 5434:5432
+    volumes:
+      - dev_pulse:/var/lib/postgresql/data
+volumes:
+  dev_pulse:
+    
