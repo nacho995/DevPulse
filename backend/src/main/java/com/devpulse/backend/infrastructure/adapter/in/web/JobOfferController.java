@@ -6,6 +6,7 @@ import com.devpulse.backend.infrastructure.adapter.in.web.dto.JobOfferRequest;
 import com.devpulse.backend.infrastructure.adapter.in.web.dto.JobOfferResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+import com.devpulse.backend.infrastructure.adapter.in.web.exception.ResourceNotFoundException;
 
 import java.util.List;
 
@@ -35,7 +36,7 @@ public class JobOfferController {
 
     @GetMapping("/{id}")
     public JobOfferResponse getJobOfferById(@PathVariable Long id) {
-        return toResponse(jobOfferUseCase.findOfferById(id).orElseThrow());
+        return toResponse(jobOfferUseCase.findOfferById(id).orElseThrow(() -> new ResourceNotFoundException("Job offer not found")));
     }
 
     @PostMapping

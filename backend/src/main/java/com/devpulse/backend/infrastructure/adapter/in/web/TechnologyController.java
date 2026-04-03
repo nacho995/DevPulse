@@ -6,6 +6,7 @@ import com.devpulse.backend.infrastructure.adapter.in.web.dto.TechnologyRequest;
 import com.devpulse.backend.infrastructure.adapter.in.web.dto.TechnologyResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+import com.devpulse.backend.infrastructure.adapter.in.web.exception.ResourceNotFoundException;
 
 import java.util.List;
 
@@ -28,7 +29,7 @@ public class TechnologyController {
 
     @GetMapping("/{id}")
     public TechnologyResponse getTechnologyById(@PathVariable Long id) {
-        return toResponse(technologyUseCase.findTechnologyById(id).orElseThrow());
+        return toResponse(technologyUseCase.findTechnologyById(id).orElseThrow(() -> new ResourceNotFoundException("Technology not found")));
     }
 
     @GetMapping("/type/{type}")
