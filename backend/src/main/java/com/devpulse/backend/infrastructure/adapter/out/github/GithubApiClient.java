@@ -1,5 +1,7 @@
 package com.devpulse.backend.infrastructure.adapter.out.github;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -11,7 +13,7 @@ import java.util.Map;
 public class GithubApiClient {
 
     private final RestClient restClient;
-
+    private static final Logger log = LoggerFactory.getLogger(GithubApiClient.class);
     public GithubApiClient() {
         this.restClient = RestClient.builder()
                 .baseUrl("https://api.github.com")
@@ -24,7 +26,7 @@ public class GithubApiClient {
                 .uri("/search/repositories?q=language:{name}&sort=stars&per_page=5", technologyName)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
-
+        log.info("Calling GitHub API for language: {}", technologyName);
         int totalRepos = (int) response.get("total_count");
 
         int totalStars = 0;
@@ -39,6 +41,7 @@ public class GithubApiClient {
         result.setRepositoryCount(totalRepos);
         result.setStars(totalStars);
         result.setForkCount(totalForks);
+        log.info("GitHub response for {}: {} repos, {} stars, {} forks", technologyName, totalRepos, totalStars, totalForks);
         return result;
     }
 
