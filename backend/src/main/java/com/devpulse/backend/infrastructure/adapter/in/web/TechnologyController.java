@@ -2,6 +2,9 @@ package com.devpulse.backend.infrastructure.adapter.in.web;
 
 import com.devpulse.backend.domain.model.Technology;
 import com.devpulse.backend.domain.port.in.TechnologyUseCase;
+import com.devpulse.backend.infrastructure.adapter.in.web.dto.TechnologyRequest;
+import com.devpulse.backend.infrastructure.adapter.in.web.dto.TechnologyResponse;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,28 +14,46 @@ import java.util.List;
 public class TechnologyController {
 
     private final TechnologyUseCase technologyUseCase;
-    public TechnologyController(TechnologyUseCase technologyUseCase)
-    {
+
+    public TechnologyController(TechnologyUseCase technologyUseCase) {
         this.technologyUseCase = technologyUseCase;
     }
 
     @GetMapping
-    public List<Technology> getTechnologies()
-    {
-        return technologyUseCase.findTechnologies();
+    public List<TechnologyResponse> getTechnologies() {
+        return technologyUseCase.findTechnologies().stream()
+                .map(this::toResponse)
+                .toList();
     }
+
     @GetMapping("/{id}")
-    public Technology getTechnologyById(@PathVariable Long id){
-        return technologyUseCase.findTechnologyById(id).orElseThrow();
+    public TechnologyResponse getTechnologyById(@PathVariable Long id) {
+        return toResponse(technologyUseCase.findTechnologyById(id).orElseThrow());
     }
+
     @GetMapping("/type/{type}")
-    public List<Technology> getTechnologiesByType(@PathVariable String type){
-        return technologyUseCase.findByType(type);
+    public List<TechnologyResponse> getTechnologiesByType(@PathVariable String type) {
+        return technologyUseCase.findByType(type).stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @PostMapping
-    public Technology createTechnology(@RequestBody Technology technology){
-        return technologyUseCase.save(technology);
+    public TechnologyResponse createTechnology(@Valid @RequestBody TechnologyRequest request) {
+        Technology technology = new Technology();
+        technology.setName(request.getName());
+        technology.setType(request.getType());
+
+        Technology saved = technologyUseCase.save(technology);
+        return toResponse(saved);
     }
 
+    private TechnologyResponse toResponse(Technology tech) {
+        TechnologyResponse response = new TechnologyResponse();
+        response.setId(tech.getId());
+        response.setName(tech.getName());
+        response.setType(tech.getType());
+        response.setCreatedAt(tech.getCreatedAt());
+        return response;
+    }
 }
