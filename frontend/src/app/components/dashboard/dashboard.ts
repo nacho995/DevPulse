@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
 import { ApiService } from '../../services/api.service';
-import { Technology, GithubData } from '../../models/technology.model';
+import { Technology, GithubData, JobOffer } from '../../models/technology.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -33,6 +33,10 @@ import { Technology, GithubData } from '../../models/technology.model';
         <div class="metric-pill">
           <span class="metric-label">Total Stars</span>
           <span class="metric-value accent">{{ formatNumber(totalStars) }}</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">Job Offers</span>
+          <span class="metric-value">{{ jobOffers.length }}</span>
         </div>
       </section>
 
@@ -87,6 +91,28 @@ import { Technology, GithubData } from '../../models/technology.model';
           }
         </div>
       </section>
+
+      @if (jobOffers.length > 0) {
+        <section class="cards-section">
+          <h2 class="section-title">
+            <span class="title-marker" style="background: var(--info)"></span>
+            Latest Job Offers
+          </h2>
+          <div class="jobs-grid">
+            @for (job of jobOffers.slice(0, 10); track job.id) {
+              <a [href]="job.url" target="_blank" class="job-card">
+                <div class="job-title">{{ job.title }}</div>
+                <div class="job-meta">
+                  <span class="job-company">{{ job.company }}</span>
+                  <span class="job-dot">&#183;</span>
+                  <span class="job-location">{{ job.location }}</span>
+                </div>
+                <span class="job-source">{{ job.source }}</span>
+              </a>
+            }
+          </div>
+        </section>
+      }
 
       <section class="charts-section">
         <h2 class="section-title">
@@ -284,6 +310,42 @@ import { Technology, GithubData } from '../../models/technology.model';
       color: var(--text-primary);
     }
     .stat-lbl { font-size: 0.75rem; color: var(--text-muted); }
+    .jobs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 0.8rem;
+      margin-bottom: 2.5rem;
+    }
+    .job-card {
+      display: block;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.2rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .job-card:hover { border-color: var(--info); transform: translateY(-1px); }
+    .job-title {
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.4rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .job-meta { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--text-secondary); }
+    .job-dot { color: var(--text-muted); }
+    .job-source {
+      display: inline-block;
+      margin-top: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--info);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
     .no-data {
       color: var(--text-muted);
       font-size: 0.85rem;
@@ -341,6 +403,7 @@ import { Technology, GithubData } from '../../models/technology.model';
 export class DashboardComponent implements OnInit {
   technologies: Technology[] = [];
   githubData: GithubData[] = [];
+  jobOffers: JobOffer[] = [];
   loading = false;
   totalRepos = 0;
   totalStars = 0;
@@ -411,6 +474,9 @@ export class DashboardComponent implements OnInit {
         this.githubData = data;
         this.computeMetrics();
         this.buildCharts();
+      });
+      this.api.getJobOffers().subscribe(jobs => {
+        this.jobOffers = jobs;
       });
     });
   }
