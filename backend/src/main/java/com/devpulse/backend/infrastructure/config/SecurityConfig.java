@@ -36,6 +36,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/technologies/**").permitAll()
                         .requestMatchers("/api/github-data/**").permitAll()
+                        .requestMatchers("/api/github-data/fetch").permitAll()
                         .requestMatchers("/api/job-offers/**").permitAll()
                         .anyRequest().authenticated()
                 )
