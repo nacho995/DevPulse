@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://devpulse-backend-e666.onrender.com/api'
+  apiUrl: 'https://devpulse-backend-algc.onrender.com/api'
 };
