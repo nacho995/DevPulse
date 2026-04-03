@@ -3,6 +3,8 @@ package com.devpulse.backend.application.service;
 import com.devpulse.backend.domain.model.Technology;
 import com.devpulse.backend.domain.port.in.TechnologyUseCase;
 import com.devpulse.backend.domain.port.out.TechnologyRepositoryPort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +25,10 @@ public class TechnologyService implements TechnologyUseCase
         return repositoryPort.findAll();
     }
 
+    @Override
+    public Page<Technology> findAll(Pageable pageable) {
+        return repositoryPort.findAll(pageable);
+    }
     @Override
     public List<Technology> findByType(String language) {
         return repositoryPort.findByType(language);

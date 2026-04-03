@@ -2,6 +2,8 @@ package com.devpulse.backend.infrastructure.adapter.out.persistence;
 
 import com.devpulse.backend.domain.model.Technology;
 import com.devpulse.backend.domain.port.out.TechnologyRepositoryPort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -31,6 +33,11 @@ public class TechnologyPersistenceAdapter implements TechnologyRepositoryPort {
     @Override
     public List<Technology> findAll() {
         return technologyJpaRepository.findAll().stream().map(technologyMapper::toDomain).toList();
+    }
+
+    @Override
+    public Page<Technology> findAll(Pageable pageable) {
+        return technologyJpaRepository.findAll(pageable).map(technologyMapper::toDomain);
     }
 
     @Override

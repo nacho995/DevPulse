@@ -5,6 +5,8 @@ import com.devpulse.backend.domain.port.in.TechnologyUseCase;
 import com.devpulse.backend.infrastructure.adapter.in.web.dto.TechnologyRequest;
 import com.devpulse.backend.infrastructure.adapter.in.web.dto.TechnologyResponse;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import com.devpulse.backend.infrastructure.adapter.in.web.exception.ResourceNotFoundException;
 
@@ -21,10 +23,8 @@ public class TechnologyController {
     }
 
     @GetMapping
-    public List<TechnologyResponse> getTechnologies() {
-        return technologyUseCase.findTechnologies().stream()
-                .map(this::toResponse)
-                .toList();
+    public Page<TechnologyResponse> getTechnologies(Pageable pageable) {
+        return technologyUseCase.findAll(pageable).map(this::toResponse);
     }
 
     @GetMapping("/{id}")
