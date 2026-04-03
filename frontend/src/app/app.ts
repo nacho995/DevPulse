@@ -7,14 +7,21 @@ import { NavbarComponent } from './components/navbar/navbar';
   standalone: true,
   imports: [RouterOutlet, NavbarComponent],
   template: `
-    <app-navbar />
-    <router-outlet />
+    <div class="app-shell">
+      <app-navbar />
+      <main class="main-content">
+        <router-outlet />
+      </main>
+    </div>
   `,
   styles: [`
-    :host {
-      display: block;
+    .app-shell {
       min-height: 100vh;
-      background: #0f0f23;
+      position: relative;
+      z-index: 1;
+    }
+    .main-content {
+      position: relative;
     }
   `]
 })
