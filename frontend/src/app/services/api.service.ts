@@ -22,34 +22,34 @@ export class ApiService {
 
   constructor(private http: HttpClient, private auth: AuthService) {}
 
-  private getHeaders(): HttpHeaders {
-    const token = this.auth.getToken();
-    return token
-      ? new HttpHeaders({ Authorization: `Bearer ${token}` })
-      : new HttpHeaders();
-  }
-
+  // Public endpoints - no auth needed
   getTechnologies(): Observable<Page<Technology>> {
-    return this.http.get<Page<Technology>>(`${this.baseUrl}/technologies?size=200`, { headers: this.getHeaders() });
+    return this.http.get<Page<Technology>>(`${this.baseUrl}/technologies?size=200`);
   }
 
   getGithubData(): Observable<GithubData[]> {
-    return this.http.get<GithubData[]>(`${this.baseUrl}/github-data`, { headers: this.getHeaders() });
+    return this.http.get<GithubData[]>(`${this.baseUrl}/github-data`);
   }
 
   getReposByTechnology(technologyId: number): Observable<GithubRepo[]> {
-    return this.http.get<GithubRepo[]>(`${this.baseUrl}/github-data/repos/${technologyId}`, { headers: this.getHeaders() });
+    return this.http.get<GithubRepo[]>(`${this.baseUrl}/github-data/repos/${technologyId}`);
   }
 
   getJobOffers(): Observable<JobOffer[]> {
-    return this.http.get<JobOffer[]>(`${this.baseUrl}/job-offers`, { headers: this.getHeaders() });
+    return this.http.get<JobOffer[]>(`${this.baseUrl}/job-offers`);
   }
 
   fetchGithubData(): Observable<string> {
-    return this.http.post(`${this.baseUrl}/github-data/fetch`, {}, { headers: this.getHeaders(), responseType: 'text' });
+    return this.http.post(`${this.baseUrl}/github-data/fetch`, {}, { responseType: 'text' });
   }
 
+  // Auth required endpoints
   createTechnology(name: string, type: string): Observable<Technology> {
-    return this.http.post<Technology>(`${this.baseUrl}/technologies`, { name, type }, { headers: this.getHeaders() });
+    return this.http.post<Technology>(`${this.baseUrl}/technologies`, { name, type }, { headers: this.authHeaders() });
+  }
+
+  private authHeaders(): HttpHeaders {
+    const token = this.auth.getToken();
+    return token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : new HttpHeaders();
   }
 }
