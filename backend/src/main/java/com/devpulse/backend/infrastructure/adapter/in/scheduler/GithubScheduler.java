@@ -7,10 +7,13 @@ import com.devpulse.backend.domain.port.out.JobOfferRepositoryPort;
 import com.devpulse.backend.domain.port.out.TechnologyRepositoryPort;
 import com.devpulse.backend.infrastructure.adapter.out.github.GithubApiClient;
 import com.devpulse.backend.infrastructure.adapter.out.jobapi.JobApiClient;
+import com.devpulse.backend.infrastructure.adapter.out.persistence.GithubRepoEntity;
+import com.devpulse.backend.infrastructure.adapter.out.persistence.GithubRepoJpaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -24,27 +27,30 @@ public class GithubScheduler {
     private final JobOfferRepositoryPort jobOfferPort;
     private final GithubApiClient githubApiClient;
     private final JobApiClient jobApiClient;
+    private final GithubRepoJpaRepository repoRepository;
 
     public GithubScheduler(TechnologyRepositoryPort technologyPort,
                            GithubDataRepositoryPort githubDataPort,
                            JobOfferRepositoryPort jobOfferPort,
                            GithubApiClient githubApiClient,
-                           JobApiClient jobApiClient) {
+                           JobApiClient jobApiClient,
+                           GithubRepoJpaRepository repoRepository) {
         this.technologyPort = technologyPort;
         this.githubDataPort = githubDataPort;
         this.jobOfferPort = jobOfferPort;
         this.githubApiClient = githubApiClient;
         this.jobApiClient = jobApiClient;
+        this.repoRepository = repoRepository;
     }
 
     @Scheduled(fixedRate = 86400000)
+    @Transactional
     public void fetchGithubData() {
         var technologies = technologyPort.findAll();
         log.info("Starting data fetch for {} technologies", technologies.size());
 
         for (var tech : technologies) {
             try {
-                // Fetch GitHub data
                 log.info("Fetching GitHub data for {}", tech.getName());
                 var ghResponse = githubApiClient.fetchData(tech.getName(), tech.getType());
 
@@ -55,39 +61,34 @@ public class GithubScheduler {
                 data.setRepos(ghResponse.getRepositoryCount());
                 data.setCreatedAt(LocalDateTime.now());
                 githubDataPort.save(data);
-                log.info("Saved GitHub data for {}: {} repos, {} stars", tech.getName(), ghResponse.getRepositoryCount(), ghResponse.getStars());
 
-                // Fetch job offers
-                log.info("Fetching job offers for {}", tech.getName());
-                var jobResponse = jobApiClient.fetchJobs(tech.getName());
-
-                for (var job : jobResponse.getJobs()) {
-                    JobOffer offer = new JobOffer();
-                    offer.setTitle(job.getTitle());
-                    offer.setCompany(job.getCompany());
-                    offer.setLocation(job.getLocation());
-                    offer.setUrl(job.getUrl());
-                    offer.setSource("The Muse");
-                    offer.setModality("onsite");
-                    offer.setPublishedAt(LocalDateTime.now());
-                    offer.setCreatedAt(LocalDateTime.now());
-                    jobOfferPort.save(offer);
+                // Save top repos
+                repoRepository.deleteByTechnologyId(tech.getId());
+                for (var repo : ghResponse.getTopRepos()) {
+                    GithubRepoEntity entity = new GithubRepoEntity();
+                    entity.setTechnologyId(tech.getId());
+                    entity.setName(repo.getName());
+                    entity.setFullName(repo.getFullName());
+                    entity.setDescription(repo.getDescription() != null && repo.getDescription().length() > 990
+                            ? repo.getDescription().substring(0, 990) : repo.getDescription());
+                    entity.setUrl(repo.getUrl());
+                    entity.setStars(repo.getStars());
+                    entity.setForks(repo.getForks());
+                    entity.setLanguage(repo.getLanguage());
+                    repoRepository.save(entity);
                 }
-                log.info("Saved {} job offers for {}", jobResponse.getJobs().size(), tech.getName());
+                log.info("Saved {} repos for {}", ghResponse.getTopRepos().size(), tech.getName());
 
-                // Rate limit: wait 7 seconds between API calls
                 Thread.sleep(2000);
 
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                log.error("Fetch interrupted");
                 break;
             } catch (Exception e) {
                 log.error("Failed to fetch data for {}: {}", tech.getName(), e.getMessage());
                 try { Thread.sleep(2000); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
             }
         }
-
         log.info("Data fetch completed");
     }
 }

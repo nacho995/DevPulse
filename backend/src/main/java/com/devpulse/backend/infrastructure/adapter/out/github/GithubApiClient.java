@@ -7,6 +7,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -31,34 +32,44 @@ public class GithubApiClient {
     public GitHubApiResponse fetchData(String technologyName, String type) {
         log.info("Calling GitHub API for {}: {}", type, technologyName);
 
-        // Languages use language: filter, frameworks/databases use topic: filter
-        String query;
-        if ("language".equals(type)) {
-            query = "language:" + technologyName;
-        } else {
-            query = "topic:" + technologyName.toLowerCase().replace(" ", "-").replace(".", "");
-        }
+        String query = "language".equals(type)
+                ? "language:" + technologyName
+                : "topic:" + technologyName.toLowerCase().replace(" ", "-").replace(".", "");
 
         Map<String, Object> response = restClient.get()
-                .uri("/search/repositories?q={query}&sort=stars&per_page=5", query)
+                .uri("/search/repositories?q={query}&sort=stars&per_page=10", query)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
 
         int totalRepos = (int) response.get("total_count");
-
         int totalStars = 0;
         int totalForks = 0;
+        List<GitHubApiResponse.RepoInfo> topRepos = new ArrayList<>();
+
         List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
         for (Map<String, Object> repo : items) {
-            totalStars += (int) repo.get("stargazers_count");
-            totalForks += (int) repo.get("forks_count");
+            int repoStars = (int) repo.get("stargazers_count");
+            int repoForks = (int) repo.get("forks_count");
+            totalStars += repoStars;
+            totalForks += repoForks;
+
+            GitHubApiResponse.RepoInfo info = new GitHubApiResponse.RepoInfo();
+            info.setName((String) repo.get("name"));
+            info.setFullName((String) repo.get("full_name"));
+            info.setDescription((String) repo.get("description"));
+            info.setUrl((String) repo.get("html_url"));
+            info.setStars(repoStars);
+            info.setForks(repoForks);
+            info.setLanguage((String) repo.get("language"));
+            topRepos.add(info);
         }
 
         GitHubApiResponse result = new GitHubApiResponse();
         result.setRepositoryCount(totalRepos);
         result.setStars(totalStars);
         result.setForkCount(totalForks);
-        log.info("GitHub response for {}: {} repos, {} stars, {} forks", technologyName, totalRepos, totalStars, totalForks);
+        result.setTopRepos(topRepos);
+        log.info("GitHub response for {}: {} repos, {} stars", technologyName, totalRepos, totalStars);
         return result;
     }
 }

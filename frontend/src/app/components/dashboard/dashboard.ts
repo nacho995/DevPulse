@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
 import { ApiService } from '../../services/api.service';
@@ -76,7 +77,7 @@ interface TechRanking {
         </h2>
         <div class="ranking-list">
           @for (item of filteredRanking; track item.tech.id; let i = $index) {
-            <div class="rank-row" [style.animation-delay]="i * 40 + 'ms'">
+            <div class="rank-row" [style.animation-delay]="i * 40 + 'ms'" (click)="goToRepos(item.tech)" style="cursor:pointer">
               <div class="rank-pos">{{ i + 1 }}</div>
               <div class="rank-name">
                 <span class="rank-tech-name">{{ item.tech.name }}</span>
@@ -263,7 +264,11 @@ export class DashboardComponent implements OnInit {
     scales: { r: { ticks: { display: false }, grid: { color: '#1e1e4a' } } }
   };
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private router: Router) {}
+
+  goToRepos(tech: Technology) {
+    this.router.navigate(['/repos', tech.id], { queryParams: { name: tech.name } });
+  }
 
   ngOnInit() { this.loadData(); }
 
