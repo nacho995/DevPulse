@@ -19,7 +19,7 @@ export class ApiService {
   }
 
   getTechnologies(): Observable<Page<Technology>> {
-    return this.http.get<Page<Technology>>(`${this.baseUrl}/technologies`, { headers: this.getHeaders() });
+    return this.http.get<Page<Technology>>(`${this.baseUrl}/technologies?size=200`, { headers: this.getHeaders() });
   }
 
   getGithubData(): Observable<GithubData[]> {

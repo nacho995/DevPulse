@@ -309,7 +309,9 @@ export class DashboardComponent implements OnInit {
   }
 
   getGithubDataFor(techId: number): GithubData | undefined {
-    return this.githubData.find(d => d.technologyId === techId);
+    // Get the most recent entry for this technology
+    const entries = this.githubData.filter(d => d.technologyId === techId);
+    return entries.length > 0 ? entries[entries.length - 1] : undefined;
   }
 
   getBarWidth(value: number, max: number): string {
