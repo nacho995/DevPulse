@@ -5,6 +5,17 @@ import { Technology, GithubData, JobOffer, Page } from '../models/technology.mod
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 
+export interface GithubRepo {
+  id: number;
+  name: string;
+  fullName: string;
+  description: string;
+  url: string;
+  stars: number;
+  forks: number;
+  language: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private baseUrl = environment.apiUrl;
@@ -26,12 +37,8 @@ export class ApiService {
     return this.http.get<GithubData[]>(`${this.baseUrl}/github-data`, { headers: this.getHeaders() });
   }
 
-  getGithubDataByTechnology(id: number): Observable<GithubData[]> {
-    return this.http.get<GithubData[]>(`${this.baseUrl}/github-data/technologies/${id}`, { headers: this.getHeaders() });
-  }
-
-  getStarsRatio(id: number): Observable<number> {
-    return this.http.get<number>(`${this.baseUrl}/github-data/stars-ratio/${id}`, { headers: this.getHeaders() });
+  getReposByTechnology(technologyId: number): Observable<GithubRepo[]> {
+    return this.http.get<GithubRepo[]>(`${this.baseUrl}/github-data/repos/${technologyId}`, { headers: this.getHeaders() });
   }
 
   getJobOffers(): Observable<JobOffer[]> {
