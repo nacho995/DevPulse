@@ -2,6 +2,7 @@ package com.devpulse.backend.infrastructure.adapter.out.github;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -14,19 +15,26 @@ public class GithubApiClient {
 
     private final RestClient restClient;
     private static final Logger log = LoggerFactory.getLogger(GithubApiClient.class);
-    public GithubApiClient() {
-        this.restClient = RestClient.builder()
-                .baseUrl("https://api.github.com")
-                .build();
+
+    public GithubApiClient(@Value("${github.token:}") String githubToken) {
+        var builder = RestClient.builder().baseUrl("https://api.github.com");
+        if (githubToken != null && !githubToken.isEmpty()) {
+            builder.defaultHeader("Authorization", "Bearer " + githubToken);
+            log.info("GitHub API client initialized with authentication (5000 req/hour)");
+        } else {
+            log.warn("GitHub API client initialized WITHOUT authentication (10 req/min)");
+        }
+        this.restClient = builder.build();
     }
 
     @SuppressWarnings("unchecked")
     public GitHubApiResponse fetchData(String technologyName) {
+        log.info("Calling GitHub API for language: {}", technologyName);
         Map<String, Object> response = restClient.get()
                 .uri("/search/repositories?q=language:{name}&sort=stars&per_page=5", technologyName)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
-        log.info("Calling GitHub API for language: {}", technologyName);
+
         int totalRepos = (int) response.get("total_count");
 
         int totalStars = 0;
@@ -44,5 +52,4 @@ public class GithubApiClient {
         log.info("GitHub response for {}: {} repos, {} stars, {} forks", technologyName, totalRepos, totalStars, totalForks);
         return result;
     }
-
 }

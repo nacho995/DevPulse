@@ -76,7 +76,7 @@ public class GithubScheduler {
                 log.info("Saved {} job offers for {}", jobResponse.getJobs().size(), tech.getName());
 
                 // Rate limit: wait 7 seconds between API calls
-                Thread.sleep(7000);
+                Thread.sleep(2000);
 
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -84,7 +84,7 @@ public class GithubScheduler {
                 break;
             } catch (Exception e) {
                 log.error("Failed to fetch data for {}: {}", tech.getName(), e.getMessage());
-                try { Thread.sleep(7000); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
+                try { Thread.sleep(2000); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
             }
         }
 
