@@ -28,10 +28,19 @@ public class GithubApiClient {
     }
 
     @SuppressWarnings("unchecked")
-    public GitHubApiResponse fetchData(String technologyName) {
-        log.info("Calling GitHub API for language: {}", technologyName);
+    public GitHubApiResponse fetchData(String technologyName, String type) {
+        log.info("Calling GitHub API for {}: {}", type, technologyName);
+
+        // Languages use language: filter, frameworks/databases use topic: filter
+        String query;
+        if ("language".equals(type)) {
+            query = "language:" + technologyName;
+        } else {
+            query = "topic:" + technologyName.toLowerCase().replace(" ", "-").replace(".", "");
+        }
+
         Map<String, Object> response = restClient.get()
-                .uri("/search/repositories?q=language:{name}&sort=stars&per_page=5", technologyName)
+                .uri("/search/repositories?q={query}&sort=stars&per_page=5", query)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
 

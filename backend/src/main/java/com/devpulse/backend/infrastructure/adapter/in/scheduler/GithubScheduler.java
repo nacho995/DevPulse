@@ -46,7 +46,7 @@ public class GithubScheduler {
             try {
                 // Fetch GitHub data
                 log.info("Fetching GitHub data for {}", tech.getName());
-                var ghResponse = githubApiClient.fetchData(tech.getName());
+                var ghResponse = githubApiClient.fetchData(tech.getName(), tech.getType());
 
                 GithubData data = new GithubData();
                 data.setTechnologyId(tech.getId());
