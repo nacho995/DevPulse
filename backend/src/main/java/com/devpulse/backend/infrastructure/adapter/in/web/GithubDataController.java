@@ -9,7 +9,6 @@ import com.devpulse.backend.infrastructure.adapter.out.persistence.GithubRepoJpa
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/github-data")
@@ -38,19 +37,8 @@ public class GithubDataController {
     }
 
     @GetMapping("/repos/{technologyId}")
-    public List<Map<String, Object>> getReposByTechnology(@PathVariable Long technologyId) {
-        return repoRepository.findByTechnologyId(technologyId).stream()
-                .map(r -> Map.<String, Object>of(
-                        "id", r.getId(),
-                        "name", r.getName(),
-                        "fullName", r.getFullName() != null ? r.getFullName() : "",
-                        "description", r.getDescription() != null ? r.getDescription() : "",
-                        "url", r.getUrl() != null ? r.getUrl() : "",
-                        "stars", r.getStars() != null ? r.getStars() : 0,
-                        "forks", r.getForks() != null ? r.getForks() : 0,
-                        "language", r.getLanguage() != null ? r.getLanguage() : ""
-                ))
-                .toList();
+    public List<GithubRepoEntity> getReposByTechnology(@PathVariable Long technologyId) {
+        return repoRepository.findByTechnologyId(technologyId);
     }
 
     @GetMapping("/stars-ratio/{id}")
