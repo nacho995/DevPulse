@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService, GithubRepo } from '../../services/api.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-repos',
@@ -82,22 +83,24 @@ export class ReposComponent implements OnInit {
   loading = true;
   error = '';
 
-  constructor(private route: ActivatedRoute, private api: ApiService) {}
+  constructor(private route: ActivatedRoute, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    const id = Number(this.route.snapshot.params['id']);
+    const id = this.route.snapshot.params['id'];
     this.techName = this.route.snapshot.queryParams['name'] || 'Technology';
 
-    this.api.getReposByTechnology(id).subscribe({
-      next: repos => {
-        this.repos = repos;
+    fetch(`${environment.apiUrl}/github-data/repos/${id}`)
+      .then(r => r.json())
+      .then(data => {
+        this.repos = data;
         this.loading = false;
-      },
-      error: (err) => {
+        this.cdr.detectChanges();
+      })
+      .catch(err => {
         this.error = `Failed to load repos: ${err.message}`;
         this.loading = false;
-      }
-    });
+        this.cdr.detectChanges();
+      });
   }
 
   formatNumber(n: number): string {
