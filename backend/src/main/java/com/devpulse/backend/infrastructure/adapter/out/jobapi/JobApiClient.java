@@ -6,6 +6,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -24,53 +25,40 @@ public class JobApiClient {
     @SuppressWarnings("unchecked")
     public JobApiResponse fetchJobs(String technologyName) {
         try {
-            log.info("Fetching job offers for technology: {}", technologyName);
+            log.info("Fetching job offers for: {}", technologyName);
+
+            // Fetch pages of jobs and filter by technology name in title or content
             Map<String, Object> response = restClient.get()
-                    .uri("/jobs?page=0&results_per_page=20&category=Engineering&level=Entry%20Level&level=Mid%20Level&level=Senior%20Level")
+                    .uri("/jobs?page=0&results_per_page=100")
                     .retrieve()
                     .body(new ParameterizedTypeReference<>() {});
 
-            int totalOffers = ((Number) response.get("total")).intValue();
             List<Map<String, Object>> results = (List<Map<String, Object>>) response.get("results");
+            String searchTerm = technologyName.toLowerCase();
 
-            // Filter results that mention the technology in name or contents
-            long matchingOffers = results.stream()
-                    .filter(job -> {
-                        String name = ((String) job.getOrDefault("name", "")).toLowerCase();
-                        String contents = ((String) job.getOrDefault("contents", "")).toLowerCase();
-                        return name.contains(technologyName.toLowerCase()) ||
-                               contents.contains(technologyName.toLowerCase());
-                    })
-                    .count();
+            List<JobApiResponse.JobSummary> matchingJobs = new ArrayList<>();
+            for (Map<String, Object> job : results) {
+                String name = ((String) job.getOrDefault("name", "")).toLowerCase();
+                String contents = ((String) job.getOrDefault("contents", "")).toLowerCase();
 
-            // Also search specifically for the technology
-            Map<String, Object> techResponse = restClient.get()
-                    .uri("/jobs?page=0&results_per_page=1&category=Engineering")
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<>() {});
+                if (name.contains(searchTerm) || contents.contains(searchTerm)) {
+                    JobApiResponse.JobSummary summary = new JobApiResponse.JobSummary();
+                    summary.setTitle((String) job.get("name"));
+                    Map<String, Object> company = (Map<String, Object>) job.get("company");
+                    summary.setCompany(company != null ? (String) company.get("name") : "Unknown");
+                    List<Map<String, Object>> locations = (List<Map<String, Object>>) job.get("locations");
+                    summary.setLocation(locations != null && !locations.isEmpty() ? (String) locations.get(0).get("name") : "Remote");
+                    Map<String, Object> refs = (Map<String, Object>) job.get("refs");
+                    summary.setUrl(refs != null ? (String) refs.get("landing_page") : "");
+                    matchingJobs.add(summary);
+                }
+            }
 
             JobApiResponse result = new JobApiResponse();
-            result.setTotalOffers(totalOffers);
-            result.setMatchingOffers((int) matchingOffers);
-
-            // Extract sample jobs
-            List<JobApiResponse.JobSummary> jobs = results.stream()
-                    .limit(5)
-                    .map(job -> {
-                        JobApiResponse.JobSummary summary = new JobApiResponse.JobSummary();
-                        summary.setTitle((String) job.get("name"));
-                        Map<String, Object> company = (Map<String, Object>) job.get("company");
-                        summary.setCompany(company != null ? (String) company.get("name") : "Unknown");
-                        List<Map<String, Object>> locations = (List<Map<String, Object>>) job.get("locations");
-                        summary.setLocation(locations != null && !locations.isEmpty() ? (String) locations.get(0).get("name") : "Remote");
-                        Map<String, Object> refs = (Map<String, Object>) job.get("refs");
-                        summary.setUrl(refs != null ? (String) refs.get("landing_page") : "");
-                        return summary;
-                    })
-                    .toList();
-            result.setJobs(jobs);
-
-            log.info("Found {} total engineering offers, {} matching '{}'", totalOffers, matchingOffers, technologyName);
+            result.setTotalOffers(((Number) response.get("total")).intValue());
+            result.setMatchingOffers(matchingJobs.size());
+            result.setJobs(matchingJobs);
+            log.info("Found {} matching jobs for '{}'", matchingJobs.size(), technologyName);
             return result;
         } catch (Exception e) {
             log.error("Failed to fetch jobs for {}: {}", technologyName, e.getMessage());
